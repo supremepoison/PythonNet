@@ -1,0 +1,222 @@
+Day02笔记
+
+TCP套接字传输特征
+    1.当一端退出时如果另一端阻塞在recv,此时recv会立即结束阻塞返回空字符串
+    2.如果另一端不存在则在调用send发送时会出现Broken Pipe异常
+    3.一个监听套接字可以连接多个客户端,也可以重复使用
+
+
+
+
+
+网络收发缓冲区:
+    作用: 1.减少和磁盘的交互
+         2.协调收发速度(数据处理速度)
+
+         * send/recv实际是向缓冲区发送,从缓冲区接受
+
+TCP粘包:
+    1.产生原因:
+        1.TCP以字节流的方式进行数据传输,消息之间没边界
+        2.多次发送的信息被一次接收
+    2.条件:
+        1.如果每次发送的内容是独立含义的个体,此时粘包会产生影响
+    3.处理:
+        1.将消息结构化
+        2.在消息结尾人为添加结束标志
+        3.控制消息发送速度
+
+
+
+
+基于UDP套接字的编程:
+    1.服务端:
+        socket()-->bind()-->recvfrom()/sendto()-->close()
+
+        1.创建数据报套接字
+            sockfd = socket.socket(AF_INT, SOCK_DGRAM)
+
+        2.绑定地址
+            socket.bind(addr)
+
+        3.消息接受
+            data, addr = socked.recvfrom(buffersize)
+
+            功能:
+                接受UDP信息
+            参数:
+                每次最多接受多少字节信息
+            返回值:
+                data-->收到的消息
+                addr-->消息发送方的地址
+            
+            * 一次接收一个数据报，如果数据报大小大于buffersize则会丢失部分消息
+
+        4.消息发送
+            n = socket.sendto(data,addr)
+
+            功能:
+                发送udp消息
+            参数:
+                data-->要发送的消息 byte
+                addr-->目标地址
+            返回值： 
+                发送的字节数
+        
+        5.关闭套接字
+            sockfd.close()
+
+    2.客户端
+        socket()-->recvfrom()/sendto()-->close()
+
+        1.创建数据报套接字
+        2.消息接受
+        3.消息发送
+        4.关闭套接字
+
+    cookie
+        1.import sys
+
+            sys.argv 属性
+            功能 ： 获取命令行参数，得到一个列表
+
+            命令本身是 argv[0]
+            后面的参数从argv[1]开始，默认以空格分隔
+            使用引号引起来的内容算作一个整体
+            命令行参数都以字符串放入列表
+
+TCP套接字 VS UDP套接字
+
+    1.  流式套接字(TCP)是以字节流方式传输数据,
+        数据报套接字(UDP)则以数据报形式传输
+    2.  TCP传输会有粘包,UDP不会
+    3.  TCP保证传输肚饿可靠性,UDP不保证
+    4.  TCP需要listen accept操作, UDP不需要
+    5.  TCP使用send recv收发消息
+        UDP使用sendto recvfrom收发消息
+
+
+补充函数:
+    sendall(data)
+    功能, 参数 == send
+    返回值:
+        发送成功 返回None
+        发送失败 得到异常
+
+套接字对象属性:
+    sockfd = socket.socket()
+
+    sockfd.type             套接字类型
+
+    sockdfd.family          套接字地址族类型
+
+    sockfd.getsockname()    获取套接字绑定地址
+
+    sockfd.fileno()         获取套接字对应的文件描述符
+        #文件描述符: 操作系统中,每一个I/O操作,系统都会分配一个大于0
+        的整数作为编号,该整数即为这个I/O操作的文件描述符
+        ------->文件描述符是系统识别I/O的标志
+
+    sockfd.getpeername()     连接套接字获取连接段地址
+
+    sockfd.setsockopt(level,option,value)
+        功能:设置套接字选项,丰富或者修改套接字属性功能
+        参数:
+            leve:   选项类别    SOL_SOCKET
+            option: 每个选项类别对应的子选项
+            value:  对选项设置值
+        
+
+        #创建套接字后立即设置
+
+    sockfd.getsockopt(level,option)
+        功能:获取套接字选项值
+        参数:
+            leve:   选项类别    SOL_SOCKET
+            option: 每个选项类别对应的子选项
+           
+        返回值: 获取到的选项值
+
+UDP应用之广播
+    广播:
+        一点发送,多点接受
+    广播地址:
+        每个网段的最大地址为广播地址
+    设置发送可以接受广播
+        s.setsockopt(SOL_SOCKET,SO_BROADCAST,1)
+        #在创建套接字后
+
+    cookie:
+        format()    字符串属性函数
+        功能:
+            通过参数合成字符串
+        示例:
+            s = '{}is a {}'.format('TOM','BOY')
+            #'TOM is a BOY'
+
+            s = '{1}is a {0}'.format('TOM','BOY')
+            #'BOY is a TOM'
+
+            s = '{a}is a {b}'.format(a ='TOM',b ='BOY')
+            #'TOM is a BOY'
+
+TCP应用值http传输:
+    http协议:
+        超文本传输协议      应用层协议
+    用途:
+        网页的获取
+        数据的传输
+    特点:
+        1.应用层协议,传输层选择TCP传输
+        2.简单,灵活,很多语言都有HTTP专门接口
+        3.无状态协议,协议本身不要求记录传输的数据
+        4.http1.1 支持持久连接
+    网页请求过程:
+        1.客户端(浏览器) 通过TCP传输 发送http请求 给服务端
+        2.服务端接收到http请求后进行解析
+        3.服务端处理具体请求内容,组织响应内容
+        4.将响应内容以http响应格式回发给浏览器
+        5.浏览器接受响应内容解析展示
+
+    Http请求 request
+        请求格式:
+            请求行: 具体的请求类别和请求路径
+
+                格式: GET   /   HTTP    /   1.1
+                    请求类别/请求内容(路径)/协议版本
+
+                请求类别(每种类别代表要做不同事情):
+                    GET     ---->   获取网络资源
+                    POST    ---->   提交一定的信息,得到反馈
+                    HEAD    ---->   只获取相应头
+                    PUT     ---->   更新服务器资源
+                    DELETE  ---->   删除服务器资源
+                    CONNECT
+                    TRACE   ---->   测试
+                    OPTIONS ---->   获取服务器性能信息
+
+            请求头:     对请求内容的基本描述
+
+                Accept-Encoding: gzip, deflate
+                Accept-Language: zh-CN,zh;q=0.9
+                Cache-Control: max-age=0
+                Connection: keep-alive
+
+            (空行)
+
+            请求体:     请求参数或者提交内容
+
+作业:
+    使用TCP完成一个文件的传输,要求可以传输文本文件
+    也可以传输图片
+    从客户端发给服务段,或者从服务段发给客户端均可
+
+
+        
+
+        
+       
+        
+            
+
+

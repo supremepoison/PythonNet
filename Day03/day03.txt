@@ -1,0 +1,157 @@
+Day03笔记
+
+
+HTTP响应
+    响应行: 反馈基本的相应情况
+
+        格式:   HTTP/1.1    200         Ok
+                版本        响应码      附加信息
+
+            响应码:
+                1xx     提示信息,表示请求被接受
+                2xx     响应成功
+                3xx     响应需要进一步操作,重定向
+                4xx     客户端错误
+                5xx     服务器错误
+                常见:
+                    200     成功
+                    404     访问内容不存在
+                    401     没有访问权限
+                    500     服务器未知异常
+
+    响应头: 对响应内容的描述
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Type: text/html
+        Date: Thu, 06 Sep 2018 09:11:18 GMT
+
+    空行
+    
+    响应体:具体的响应内容
+
+I/O input output
+
+    在内存中存在数据交互的操作认为是IO操作
+        和终端交互: input print
+        和磁盘交互: read write
+        和网络交互: recv send
+
+    IO密集型程序:
+        在程序执行中有大量的IO操作,而CPU运算较少.
+        特点:
+            消耗CPU资源少,耗时长,效率低
+
+    计算密集型程序(CPU密集型程序)
+        程序中计算较多,IO操作较少
+        特点:
+            消耗CPU资源多,运算速度快,效率高
+
+    IO的类型:
+        阻塞IO
+        非阻塞IO
+        IO多路复用
+        
+    阻塞IO:
+        阻塞IO是IO的默认形态,是效率较低的一种IO情形
+
+        阻塞情况:
+            1.因为某种条件没有达成造成的函数阻塞
+                e.g. accept input recv
+            2.处理IO的时间较长产生的阻塞行为
+                e.g. 网络传输,大文件的读写
+
+    非阻塞IO:
+        1.将原本的阻塞函数通过属性的修改使其变为非阻塞
+
+            sockfd.setblocking(bool)
+                功能:
+                    将套接字设置为非阻塞IO
+                参数:
+                    默认为TRUE
+                    表示套接字调用阻塞函数时为阻塞状态
+                    设置为FALSE 
+                    表示调用阻塞函数变为非阻塞状态
+                注意:
+                    非阻塞通常和循环一起使用,不断执行任务然后再检测IO行为是否满足运行条件
+
+                #超时检测,即设置一个最长阻塞等待时间,超过时间后不再阻塞
+
+            sockfd.settimeout(sec)
+                功能:   
+                    设置套接字的超时时间
+                参数:
+                    设置的时间,多少秒,无返回值
+                注意:
+                    设置超时检测一定是在阻塞状态下
+        
+
+    IO多路复用
+        准备就绪的IO:
+            IO能够操作,可以进行处理执行
+        定义: 
+            同时监控多个IO事件,当哪个IO事件准备就绪,就执行哪个IO事件,
+            以此形成可以同时操作多个IO的行为,避免一个iO阻塞造成其他的都无法运行,提高了执行效率
+
+        具体方案:
+            1.系统支持:
+                select: windows linux unix
+                poll: linux unix
+                epoll: linux unix
+
+            2.python模块
+
+                import select
+                select 方法实现多路复用
+
+                rs, ws, xs = select(rlist, wlist, xlist[,timeout])
+
+                功能:
+                    监控IO事件,阻塞等待IO发生
+                参数:
+                    rlist   列表    想要关注的等待发生的IO事件
+                        -- wait until ready for reading
+
+                    wlist   列表    想要关注的可以主动处理的IO
+                        -- wait until ready for writing
+
+                    xlist   列表    想要关注的出现异常去处理的IO
+                        -- wait for an ``exceptional condition''
+
+                    timeout     超时时间,默认为阻塞设置超时后即阻塞一定的时间
+
+                返回值:
+                    rs    列表    rlist中准备就绪的IO对象
+                    ws    列表    wlist中准备就绪的IO对象
+                    xs    列表    xlist中准备就绪的IO对象
+
+        基于select IO多路复用的TCP服务端
+
+            步骤:
+                1.将关注的IO放入对应类别的关注列表
+                2.通过select函数济宁监控
+                3.遍历select返回值确定哪个IO事件发生
+                4.处理发生的IO事件
+
+            注意:
+                1.wlist中如果存在IO事件,则select会立即返回让你处理
+                2.在处理IO过程中,不要出现死循环等长期占有服务端的情况
+                3.IO多路复用占用计算机资源较少,效率较高
+
+
+                    
+
+位运算
+    &   按位与
+    |   按位或
+    ^   按位异或
+    <<  左移
+    >>  右移
+
+    11  1011
+    14  1110
+
+    11 & 14 = 1010  一0则0
+    11 | 14 = 1111  一1则1
+    11 ^ 14 = 0101  相同为0不同为1
+    11 << 2 =101100 向左移,右侧补0
+    11 >> 2 = 10    向右移动挤掉低位

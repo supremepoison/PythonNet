@@ -1,0 +1,121 @@
+ Day04笔记
+
+poll 实现IO多路复用(需要用导入select模块)
+
+    p = select.poll()
+        功能: 创建poll对象
+        返回值: poll对象
+
+
+        p.register(fd,event)
+            功能: 注册要关注的IO事件
+            参数: fd        要关注的IO对象
+                 event     选择要关注的事件
+                    常用事件类型:
+                        POLLIN      读IO事件
+                        POLLOUT     写IO事件
+                        POLLERR     出错IO事件
+                        POLLHUP     IO连接断开事件
+
+            e.g.    p.register(sockfd, POLLIN | POLLERR)
+
+        p.unregister(fd)
+            功能: 取消的IO的关注
+            参数: IO对象或者是文件描述符
+
+        events = p.poll()
+            功能: 阻塞等待监控的IO事件发生 
+            返回值: events是一个列表 格式如下:
+                    [(fileno,event)),(),()...]
+                    其中每个元祖为一个就绪的IO事件
+                    元祖中有该IO的fileno和就绪的事件类型
+
+            #需要字典配合通过fileno查找对应的IO事件对象
+                {fileno: io_obj}
+                    e.g. {sockfd.fileno(): sockfd}
+
+    poll_server实现步骤
+
+        1.创建套接字
+        2.将套接字设置为关注
+        3.创建查找字典, 并维护
+        4.循环监控IO发生
+        5.处理发生的IO事件
+
+
+epoll方法实现IO多路复用
+    使用方法:
+        基本与poll方法相同
+        1.生成对象改为 epoll方法
+        2.事件类型改为EPOLL类型
+    epoll特点:
+        1.epoll效率比select和poll要高
+        2.epoll的IO监控数量要比select要多
+        3.epoll的触发方式更多(边缘触发)
+
+
+发送更丰富的数据结构
+    struct模块  结构化数据
+        原理:
+            将数据转换为bytes,并且可以将bytes格式数据转换回去
+        
+    Struct(fmt)
+        功能:
+            生产struct对象
+        参数:
+            fmt 定制的数据结构组成
+        示例:
+            要发的数据: 1b'zhang'1.75
+            组织的类型格式: Struct('i5sf')
+
+            python类型      fmt
+                int         i
+                folat       f
+                bytes       ns  (n为有几个字符)
+        返回:
+            struct 对象
+
+
+    st.pack(v1,v2,v3..)
+        功能:  
+            将数据按照制定格式打包转换为bytes
+        参数：
+	        要发送的数据       
+        返回值：
+            打包后的bytes字符
+        示例:
+            st.pack(1,b'zhang',1.75)
+
+    st.unpack(bytes_data)
+        功能:
+            将bytes字串解析为指定格式数据
+        参数：
+            要解析的bytes字串
+        返回值：
+            元祖，为解析后的内容
+
+            *struct模块可以直接调用pack（） unpack（）
+            此时两个函数第一个参数为fmt
+
+            struct.pack('i5sf',1,b'zhang',1.75)
+
+本地套接字
+
+    功能:
+        本地量程序之间发送数据信息
+    创建流程:
+        1.创建本地套接字
+            sockfd = socket(AF_UNIX,SOCK_STREAM)
+
+        2.绑定本地套接字文件
+            sockfd.bind(path)
+
+        3.监听
+            listen()
+        4.消息收发
+            send/recv
+
+
+
+
+        
